@@ -1,0 +1,9 @@
+git add .
+git commit -m "what you changed"
+git push    (3 commands after any change)
+
+on new pc (git clone https://github.com/ShubhamSomani020/trading-system.git)
+
+then instal lib (pip install streamlit pandas sqlalchemy plotly)
+
+then run (python -m streamlit run app.py)

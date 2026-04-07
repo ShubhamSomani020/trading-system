@@ -1,9 +1,10 @@
 import streamlit as st
 import pandas as pd
-from logic import *
-from database import init_db
-
-init_db()
+from sheets_db import (
+    add_stock, get_all_stocks, get_stock_info,
+    log_trade, get_stock_history, calculate_pnl,
+    add_to_watchlist, get_watchlist
+)
 
 st.set_page_config(page_title="My Trading System", layout="wide")
 st.title("📈 My Trading System")
@@ -19,14 +20,12 @@ menu = st.sidebar.radio("Navigate", [
 # ── DASHBOARD ──────────────────────────────────────────
 if menu == "🏠 Dashboard":
     st.subheader("Portfolio Overview")
-    conn = get_connection()
-    stocks = pd.read_sql_query("SELECT DISTINCT symbol FROM trades", conn)
-    conn.close()
-
-    if stocks.empty:
+    trades = get_stock_history("")
+    if trades.empty:
         st.info("No trades logged yet. Add a stock and log your first trade.")
     else:
-        for sym in stocks['symbol']:
+        symbols = trades["symbol"].unique()
+        for sym in symbols:
             pnl = calculate_pnl(sym)
             if pnl:
                 col1, col2, col3, col4 = st.columns(4)
@@ -93,10 +92,10 @@ elif menu == "🔍 Stock History":
         info = get_stock_info(symbol)
         if info:
             col1, col2, col3 = st.columns(3)
-            col1.metric("Support Zone", f"₹{info[4]}")
-            col2.metric("Resistance Zone", f"₹{info[5]}")
-            col3.write(f"**Sector:** {info[3]}")
-            st.info(f"📝 Study Notes: {info[6]}")
+            col1.metric("Support Zone", f"₹{info['support_zone']}")
+            col2.metric("Resistance Zone", f"₹{info['resistance_zone']}")
+            col3.write(f"**Sector:** {info['sector']}")
+            st.info(f"📝 Study Notes: {info['study_notes']}")
         else:
             st.warning("Stock not in database. Add it first.")
 

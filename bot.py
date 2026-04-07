@@ -1,11 +1,7 @@
-import asyncio
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
-from logic import log_trade, get_stock_history, calculate_pnl, add_to_watchlist, get_watchlist, get_stock_info
-from database import init_db
+from sheets_db import log_trade, get_stock_history, calculate_pnl, add_to_watchlist, get_watchlist, get_stock_info
 from datetime import date
-
-init_db()
 
 TOKEN = "8713736731:AAHFFbC-CMEcBKBjmr5cs9VcA0ni7HvQEA4"
 
@@ -44,7 +40,7 @@ async def buy(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         notes = " ".join(args[3:]) if len(args) > 3 else ""
         msg = log_trade(symbol, "BUY", price, qty, str(date.today()), notes, "Disciplined", "")
         await update.message.reply_text(f"✅ *{msg}*\n📅 {date.today()}\n💰 ₹{price} x {qty} = ₹{price*qty:,.0f}", parse_mode="Markdown")
-    except Exception as e:
+    except:
         await update.message.reply_text("❌ Format: /buy SYMBOL PRICE QTY notes\nExample: /buy TCS 4200 10 good entry")
 
 # ── /sell ──────────────────────────────────────────────
@@ -107,12 +103,12 @@ async def info(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"{symbol} not in database.")
             return
         msg = f"""
-📋 *{symbol} - {row[2]}*
+📋 *{symbol} - {row['name']}*
 
-🏭 Sector: {row[3]}
-🟢 Support: ₹{row[4]}
-🔴 Resistance: ₹{row[5]}
-📝 Notes: {row[6]}
+🏭 Sector: {row['sector']}
+🟢 Support: ₹{row['support_zone']}
+🔴 Resistance: ₹{row['resistance_zone']}
+📝 Notes: {row['study_notes']}
         """
         await update.message.reply_text(msg, parse_mode="Markdown")
     except:
@@ -129,7 +125,7 @@ async def watch(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         msg = add_to_watchlist(symbol, target, sl, reason)
         await update.message.reply_text(f"✅ {msg}\n🎯 Target: ₹{target}\n🛑 SL: ₹{sl}", parse_mode="Markdown")
     except:
-        await update.message.reply_text("❌ Format: /watch SYMBOL TARGET STOPLOSS reason\nExample: /watch TCS 4500 3900 breakout setup")
+        await update.message.reply_text("❌ Format: /watch SYMBOL TARGET STOPLOSS reason")
 
 # ── /watchlist ─────────────────────────────────────────
 async def watchlist(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -147,7 +143,6 @@ async def watchlist(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg, parse_mode="Markdown")
 
 # ── /alert ─────────────────────────────────────────────
-# Stores alerts in memory (simple version)
 alerts = []
 
 async def alert(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -155,7 +150,7 @@ async def alert(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         args = ctx.args
         symbol = args[0].upper()
         price = float(args[1])
-        direction = args[2].lower()  # above or below
+        direction = args[2].lower()
         alerts.append({
             "symbol": symbol,
             "price": price,

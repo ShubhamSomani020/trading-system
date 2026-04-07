@@ -1,0 +1,6 @@
+data/
+*.db
+__pycache__/
+.env
+credentials.json
+trading_system/

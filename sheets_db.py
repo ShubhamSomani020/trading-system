@@ -20,7 +20,7 @@ def get_client():
         creds = Credentials.from_service_account_file(CREDS_PATH, scopes=SCOPES)
     else:
         import streamlit as st
-        creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
+        creds_dict = json.loads(st.secrets["google_credentials"])
         creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     return gspread.authorize(creds)
 

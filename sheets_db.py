@@ -19,7 +19,8 @@ def get_client():
     if os.path.exists(CREDS_PATH):
         creds = Credentials.from_service_account_file(CREDS_PATH, scopes=SCOPES)
     else:
-        creds_dict = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+        import streamlit as st
+        creds_dict = json.loads(st.secrets["GOOGLE_CREDENTIALS"])
         creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     return gspread.authorize(creds)
 

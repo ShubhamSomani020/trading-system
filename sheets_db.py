@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import json
+import yfinance as yf
 
 SHEET_ID = "1FE1MvvvHW6wh0gfPxrOdOmya16HPiPQx8XEkv1fepaw"
 
@@ -101,7 +102,6 @@ def get_watchlist():
     data = ws.get_all_records()
     return pd.DataFrame(data)
 
-import yfinance as yf
 
 # ── ALERTS ─────────────────────────────────────────────
 def add_alert(symbol, price, direction, chat_id):
@@ -142,7 +142,7 @@ def get_live_price(symbol):
         return None
     
 def get_nifty500_symbols():
-    ws = get_sheet("nifty 500")
+    ws = get_sheet("Nifty500")
     data = ws.get_all_records()
     df = pd.DataFrame(data)
     if df.empty:

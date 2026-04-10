@@ -3,7 +3,7 @@ import pandas as pd
 from sheets_db import (
     add_stock, get_all_stocks, get_stock_info,
     log_trade, get_stock_history, calculate_pnl,
-    add_to_watchlist, get_watchlist
+    add_to_watchlist, get_watchlist, get_live_price
 )
 
 st.set_page_config(page_title="My Trading System", layout="wide")
@@ -132,8 +132,56 @@ elif menu == "👀 Watchlist":
                 st.warning("Enter a symbol.")
 
     st.divider()
+
     wl = get_watchlist()
     if not wl.empty:
-        st.dataframe(wl, use_container_width=True)
+        st.subheader("📋 Your Watchlist")
+
+        # fetch live prices for all watchlist stocks
+        rows = []
+        for _, row in wl.iterrows():
+            ltp = get_live_price(row["symbol"])
+            if ltp and float(row["target_price"]) > 0:
+                gap_to_target = round(((float(row["target_price"]) - ltp) / ltp) * 100, 2)
+                gap_to_sl     = round(((ltp - float(row["stop_loss"])) / ltp) * 100, 2)
+            else:
+                gap_to_target = None
+                gap_to_sl     = None
+
+            rows.append({
+                "Symbol":         row["symbol"],
+                "LTP ₹":          ltp if ltp else "N/A",
+                "Target ₹":       row["target_price"],
+                "SL ₹":           row["stop_loss"],
+                "Gap to Target %": gap_to_target,
+                "Gap to SL %":    gap_to_sl,
+                "Reason":         row["reason"],
+            })
+
+        df_display = pd.DataFrame(rows)
+
+        # color code LTP vs target/sl
+        def color_row(row):
+            colors = [""] * len(row)
+            try:
+                ltp    = float(row["LTP ₹"])
+                target = float(row["Target ₹"])
+                sl     = float(row["SL ₹"])
+                if ltp >= target:
+                    colors = ["background-color: #1a472a"] * len(row)  # green
+                elif ltp <= sl:
+                    colors = ["background-color: #4a1010"] * len(row)  # red
+            except:
+                pass
+            return colors
+
+        st.dataframe(
+            df_display.style.apply(color_row, axis=1),
+            use_container_width=True
+        )
+
+        if st.button("🔄 Refresh Prices"):
+            st.rerun()
+
     else:
         st.info("Watchlist is empty.")

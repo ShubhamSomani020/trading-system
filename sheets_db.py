@@ -100,3 +100,54 @@ def get_watchlist():
     ws = get_sheet("watchlist")
     data = ws.get_all_records()
     return pd.DataFrame(data)
+
+import yfinance as yf
+
+# ── ALERTS ─────────────────────────────────────────────
+def add_alert(symbol, price, direction, chat_id):
+    ws = get_sheet("alerts")
+    if ws.cell(1,1).value != "symbol":
+        ws.append_row(["symbol", "price", "direction", "chat_id", "triggered", "added_at"])
+    ws.append_row([symbol.upper(), price, direction, str(chat_id), "NO", str(datetime.now())])
+    return f"Alert added for {symbol}."
+
+def get_active_alerts():
+    ws = get_sheet("alerts")
+    data = ws.get_all_records()
+    df = pd.DataFrame(data)
+    if df.empty:
+        return df
+    return df[df["triggered"] == "NO"]
+
+def mark_alert_triggered(symbol, price, direction):
+    ws = get_sheet("alerts")
+    data = ws.get_all_records()
+    for i, row in enumerate(data):
+        if (row["symbol"] == symbol.upper() and
+            float(row["price"]) == price and
+            row["direction"] == direction and
+            row["triggered"] == "NO"):
+            ws.update_cell(i + 2, 5, "YES")  # column 5 = triggered
+            break
+
+# ── LIVE PRICE ─────────────────────────────────────────
+def get_live_price(symbol):
+    try:
+        ticker = yf.Ticker(f"{symbol}.NS")
+        data = ticker.history(period="1d", interval="1m")
+        if not data.empty:
+            return round(data["Close"].iloc[-1], 2)
+        return None
+    except:
+        return None
+    
+def get_nifty500_symbols():
+    ws = get_sheet("nifty 500")
+    data = ws.get_all_records()
+    df = pd.DataFrame(data)
+    if df.empty:
+        return []
+    # column header name — check what row 1 says in your sheet
+    col = df.columns[2]  # column C (index 2)
+    symbols = df[col].dropna().str.strip().str.upper().tolist()
+    return [s for s in symbols if s]
